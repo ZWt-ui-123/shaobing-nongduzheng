@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-09-30 10:35:42",
+  "built_at": "2026-09-30 10:56:52",
   "source": "C:\\Users\\Admin\\Desktop\\DSH\\sepsis-guard",
   "patched": {
     "web/js/api.js": [
@@ -15,11 +15,12 @@
     "web/js/monitor.js": [
       "状态灯与页脚认识 snapshot 模式"
     ],
-    "web/js/manual.js": [
-      "navModel 存在性判断（该元素在本页不存在，原写法会抛错）"
-    ],
     "web/js/sim-core.js": [
       "probe() 在静态快照下直接判 builtin，不再发起注定 404 的探测"
+    ],
+    "web/js/api-docs.js": [
+      "detect() 跳过注定失败的后端探测，改为如实说明",
+      "「接收示例报文」「查看示例报文」在静态快照下说明原因而非发失败请求"
     ]
   },
   "added": [

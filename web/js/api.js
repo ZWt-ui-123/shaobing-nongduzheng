@@ -243,7 +243,11 @@
       if (opts.sort) params.push('sort=' + encodeURIComponent(opts.sort));
       if (opts.limit) params.push('limit=' + encodeURIComponent(opts.limit));
       if (opts.level && opts.level !== 'all') params.push('level=' + encodeURIComponent(opts.level));
-      if (opts.q) params.push('q=' + encodeURIComponent(opts.q));
+      // 注意参数名是 `search` 而不是 `q`：后端 list_patients 的形参叫 search。
+      // 早先这里发的是 `q`，后端会静默忽略它——表现是"搜索没生效"而不是报错，
+      // 一直被 console.js / doctor.js 的客户端搜索掩盖着。demo 的 fallback 读的是
+      // opts.q，不受这里影响。
+      if (opts.q) params.push('search=' + encodeURIComponent(opts.q));
       var path = '/api/patients' + (params.length ? '?' + params.join('&') : '');
       return request(path, null, function () {
         return demo().getPatients(opts);

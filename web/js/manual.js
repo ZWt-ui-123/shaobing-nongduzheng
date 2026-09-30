@@ -836,11 +836,10 @@
       flag.style.borderColor = '';
       flag.title = '已连接后端服务，录入数据写入服务进程';
     }
-    /* [静态快照版] 防御性修正：manual.html 里并没有 navModel 这个元素，
-       原写法在内置模式下（health 返回带 model_name）必然抛 TypeError，
-       被 init 里的 .catch 吞掉后状态灯就停在「异常」。加个存在性判断即可，
-       元素存在时行为与原生完全一致。 */
     if (payload && payload.model_name) {
+      // manual.html 里并没有 navModel 这个元素。内置模式下 /api/health 会返回
+      // 带 model_name 的对象，直接写必然抛 TypeError，被 init 里的 .catch 吞掉
+      // 后状态灯就停在「异常」。先判断元素存在；元素存在时行为与原来完全一致。
       var navModel = $('navModel');
       if (navModel) navModel.textContent = '评分：' + payload.model_name;
     }

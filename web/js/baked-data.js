@@ -54,14 +54,41 @@
     if (typeof global.fetch !== 'function') {
       return Promise.reject(new Error('当前环境不支持 fetch'));
     }
-    return global.fetch(DATA_BASE + name, { cache: 'force-cache' })
-      .then(function (res) {
-        if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
-        return res.json();
-      });
+    return global.fetch(DATA_BASE + name, { cache: 'force-cache' });
   }
 
-  store.ready = fetchJSON('console.json').then(function (data) {
+  /* 失败重试（指数退避，最多 3 次尝试）。
+   *
+   * 站点是纯静态、跑在 CDN 上，首屏能否出内容完全取决于这一次 fetch。
+   * 评委网络抖动、CDN 节点偶发回源失败都可能让首屏空着——那是最不能接受
+   * 的失败形态。加重试后，短暂故障会被吸收掉；三次都失败才降级到演示数据。
+   */
+  function fetchWithRetry(name, attempt) {
+    attempt = attempt || 0;
+    return fetchJSON(name).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+      return res.json();
+    }).catch(function (err) {
+      if (attempt >= 2) throw err;
+      var delay = 400 * Math.pow(3, attempt);   // 约 400ms、1200ms
+      return wait(delay).then(function () {
+        if (global.console && global.console.warn) {
+          global.console.warn('[baked-data] ' + name + ' 第 ' + (attempt + 1) +
+            ' 次载入失败（' + (err && err.message) + '），' + delay + 'ms 后重试');
+        }
+        return fetchWithRetry(name, attempt + 1);
+      });
+    });
+  }
+
+  function wait(ms) {
+    return new Promise(function (resolve) {
+      if (typeof global.setTimeout === 'function') global.setTimeout(resolve, ms);
+      else resolve();
+    });
+  }
+
+  store.ready = fetchWithRetry('console.json').then(function (data) {
     store.patients = data.patients || [];
     store.alerts = data.alerts || [];
     store.models = data.models || [];
@@ -138,12 +165,7 @@
   function loadDetail(pid) {
     if (store.details[pid]) return store.details[pid];
     if (typeof global.fetch !== 'function') return Promise.resolve(null);
-    var p = global.fetch(DATA_BASE + 'patient/' + encodeURIComponent(pid) + '.json',
-                         { cache: 'force-cache' })
-      .then(function (res) {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.json();
-      })
+    var p = fetchWithRetry('patient/' + encodeURIComponent(pid) + '.json')
       .then(function (payload) {
         store.details[pid] = payload;
         return payload;
