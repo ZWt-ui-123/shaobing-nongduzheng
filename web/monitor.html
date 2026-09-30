@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>哨兵 SepsisGuard · 监护端</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============================ 顶部栏 ============================ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-logo">SG</div>
+    <div class="brand-text">
+      <div class="brand-title">哨兵 <span class="en">SepsisGuard</span> · 监护端</div>
+      <div class="brand-sub">住院患者脓毒症早期预警与远程监护平台</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="conn" id="connBox" title="后端连接状态">
+      <span class="conn-dot" id="connDot"></span>
+      <span class="conn-text" id="connText">正在连接后端…</span>
+    </div>
+    <span class="refresh-info" id="tickInfo">数据流刷新周期 2s</span>
+    <a class="nav-link" href="dashboard.html">‹ 返回概览</a>
+    <a class="nav-link" href="console.html">临床控制台 ›</a>
+    <a class="nav-link" href="connect.html">数据接入 ›</a>
+    <a class="nav-link" href="live.html">动态监护 ›</a>
+    <a class="nav-link" href="report.html">报告中心 ›</a>
+    <a class="nav-link" href="timeline.html">观察日志 ›</a>
+  </div>
+</header>
+
+<!-- ======================= 免责声明（显著位置） ======================= -->
+<div class="disclaimer-banner" role="note">
+  <span class="warn-icon">!</span>
+  <span>本系统输出的是风险提示，不构成医疗诊断，临床决策请遵医嘱。</span>
+</div>
+
+<main class="container">
+
+  <!-- ========================= 处理负荷面板 ========================= -->
+  <div class="section-title">处理负荷 <span class="sub" id="loadHint">每 2 秒采样一次</span></div>
+  <section class="stats" aria-label="处理负荷">
+    <div class="stat-card">
+      <div class="stat-label">当前处理患者数</div>
+      <div class="stat-value"><span id="mPatientCount">—</span><span class="stat-unit">人</span></div>
+      <div class="stat-sub" id="mPatientSub">滑动窗口 12 小时</div>
+    </div>
+    <div class="stat-card is-time">
+      <div class="stat-label">每分钟推理次数</div>
+      <div class="stat-value"><span id="mInferPerMin">—</span><span class="stat-unit">次/分</span></div>
+      <div class="stat-sub" id="mInferSub">批量推理队列</div>
+    </div>
+    <div class="stat-card is-alert">
+      <div class="stat-label">平均单次推理耗时</div>
+      <div class="stat-value"><span id="mAvgLatency">—</span><span class="stat-unit">ms</span></div>
+      <div class="stat-sub" id="mP95">P95 —</div>
+    </div>
+  </section>
+
+  <div class="m-grid wide">
+
+    <!-- ====================== 数据流状态表 ====================== -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">数据流状态</div>
+        <div class="panel-hint">正在更新的患者列表（模拟实时滚动，每 2 秒刷新）</div>
+      </div>
+      <div class="flow-wrap">
+        <table class="flow-table">
+          <thead>
+            <tr>
+              <th>床号 / 患者</th>
+              <th>状态</th>
+              <th class="num">更新频率</th>
+              <th class="num">最后更新</th>
+              <th class="num">本轮更新</th>
+              <th class="num">数据延迟</th>
+              <th class="num">风险</th>
+            </tr>
+          </thead>
+          <tbody id="flowTableBody">
+            <tr><td colspan="7" class="muted">正在加载数据流…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="chart-note">
+        <span id="flowSummary">—</span>
+        <span>刷新周期 2 秒</span>
+      </div>
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+
+      <!-- ================== 推理服务运行状态 ================== -->
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">推理服务运行状态</div>
+          <div class="panel-hint" id="svcStatusHint">—</div>
+        </div>
+        <div class="kv-list">
+          <div class="kv"><span class="k">模型版本</span><span class="v accent" id="mModelVersion">—</span></div>
+          <div class="kv"><span class="k">运行时长</span><span class="v" id="mUptime">—</span></div>
+          <div class="kv"><span class="k">累计推理次数</span><span class="v" id="mTotalInfer">—</span></div>
+          <div class="kv"><span class="k">错误计数</span><span class="v ok" id="mErrors">—</span></div>
+          <div class="kv"><span class="k">推理队列占用</span><span class="v" id="mQueue">—</span></div>
+        </div>
+        <div class="meter"><i id="mQueueBar" style="width:0%"></i></div>
+        <div class="chart-note"><span id="mModelNote">—</span></div>
+      </section>
+
+      <!-- ================== 告警等级分布 ================== -->
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">告警等级分布</div>
+          <div class="panel-hint" id="mAlertHint">—</div>
+        </div>
+        <div class="chart-wrap"><canvas id="levelChart" class="chart-bars"></canvas></div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ====================== 监护时间轴（甘特） ====================== -->
+  <section class="panel" style="margin-top:12px">
+    <div class="panel-head">
+      <div class="panel-title">在监患者监护时间轴</div>
+      <div class="panel-hint">横轴为入 ICU 后小时数；红色圆点为告警触发时刻，紫色圆点为脓毒症发作时刻</div>
+    </div>
+    <div class="chart-wrap"><canvas id="ganttChart" class="chart-gantt"></canvas></div>
+  </section>
+
+  <!-- ====================== 推理耗时趋势 ====================== -->
+  <section class="panel" style="margin-top:12px">
+    <div class="panel-head">
+      <div class="panel-title">推理耗时趋势</div>
+      <div class="panel-hint">最近 2 分钟，每 2 秒采样一次</div>
+    </div>
+    <div class="chart-wrap"><canvas id="latencyChart" class="chart-latency"></canvas></div>
+  </section>
+
+  <!-- ====================== 推理日志流 ====================== -->
+  <section class="panel" style="margin-top:12px">
+    <div class="panel-head">
+      <div class="panel-title">推理日志流</div>
+      <div class="panel-hint">新日志从顶部插入，保留最近 220 行</div>
+    </div>
+    <div class="log-stream" id="logStream"></div>
+  </section>
+
+</main>
+
+<!-- ============================ 页脚 ============================ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-disclaimer">
+      <span class="warn-icon">!</span>
+      <span>本系统输出的是风险提示，不构成医疗诊断，临床决策请遵医嘱。</span>
+    </div>
+    <div class="footer-source">数据来源：Reyna MA, Josef CS, Jeter R, et al. Early Prediction of Sepsis From Clinical Data: The PhysioNet/Computing in Cardiology Challenge 2019. Critical Care Medicine, 48(2):210-217, 2019. 许可 CC BY 4.0，DOI 10.13026/v64v-d857</div>
+    <div class="footer-meta">
+      <span>哨兵 SepsisGuard · 监护端</span>
+      <span id="footerMode">数据模式：—</span>
+      <span>界面渲染：原生 Canvas 2D（无第三方图表库）</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/demo-data.js"></script>
+<script src="js/baked-data.js"></script>
+<script>window.SGBakedSnapshot = true;</script>
+<script src="js/charts.js"></script>
+<script src="js/api.js"></script>
+<script src="js/monitor.js"></script>
+</body>
+</html>

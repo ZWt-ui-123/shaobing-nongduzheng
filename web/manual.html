@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>哨兵 SepsisGuard · 手动录入</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/console.css">
+<link rel="stylesheet" href="css/connect.css">
+</head>
+<body>
+<div class="app">
+
+  <nav class="nav" aria-label="主导航">
+    <div class="nav-brand">
+      <div class="nav-logo">哨</div>
+      <div class="nav-brand-text">
+        <div class="nav-title">哨兵 SepsisGuard</div>
+        <div class="nav-sub">脓毒症早期预警平台</div>
+      </div>
+    </div>
+
+    <div class="nav-items">
+      <a class="nav-item" href="console.html">
+        <span class="nav-icon">▤</span><span>临床控制台</span>
+      </a>
+      <a class="nav-item" href="connect.html">
+        <span class="nav-icon">⇄</span><span>数据接入</span>
+      </a>
+      <a class="nav-item" href="live.html">
+        <span class="nav-icon">◉</span><span>动态监护</span>
+      </a>
+      <a class="nav-item is-active" href="manual.html">
+        <span class="nav-icon">✎</span><span>手动录入</span>
+      </a>
+      <a class="nav-item" href="report.html">
+        <span class="nav-icon">▦</span><span>报告中心</span>
+      </a>
+      <a class="nav-item" href="timeline.html">
+        <span class="nav-icon">☰</span><span>观察日志</span>
+      </a>
+      <a class="nav-item" href="monitor.html">
+        <span class="nav-icon">◈</span><span>运维监控</span>
+      </a>
+    </div>
+
+    <div class="nav-items" id="navPatients">
+      <div class="dim" style="padding:6px var(--sp-3);font-size:11px;">尚无记录</div>
+    </div>
+
+    <div class="nav-foot">
+      <div id="navCount">已录入 0 位患者</div>
+    </div>
+  </nav>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">手动录入</div>
+      <div class="topbar-desc">逐项填写指标，录入即出结论</div>
+    </div>
+    <div class="topbar-ticker">
+      <div class="ticker-item">
+        <span>可录入指标</span><b id="tkFields">—</b>
+      </div>
+      <div class="ticker-item">
+        <span>已填指标</span><b id="tkFilled">0</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>超出常见范围</span><b id="tkAbnormal">0</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>临时试算</span><b id="tkTrial">—</b>
+      </div>
+      <div class="live-flag" id="flagSource">数据来源：检测中…</div>
+      <div class="conn" id="connBox" title="数据来源状态">
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connText">检测中…</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <section class="hero">
+      <div class="hero-main">
+        <div class="hero-eyebrow">录入说明</div>
+        <div class="hero-sentence" id="heroSentence">
+          拖动滑条录入指标，滑条上已标出临床常见区间与异常区间。
+        </div>
+        <div class="hero-note" id="heroNote">
+          留空表示本次未测，不会参与判断，但会记入信息缺口。
+        </div>
+      </div>
+      <div class="hero-facts">
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactFields">—</div>
+          <div class="hero-fact-label">可录入指标</div>
+        </div>
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactRejected">0</div>
+          <div class="hero-fact-label">被拒绝的取值</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="split">
+
+      <!-- ================= 左：录入 ================= -->
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <span>患者信息</span>
+            <span class="sub">患者编号与记录时点是必填项</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="field">
+              <label for="patientId">患者编号<span class="req">*</span></label>
+              <input type="text" id="patientId" placeholder="例如 BED-12 或住院号" autocomplete="off">
+              <div class="hint">同一编号的多次录入会按记录时点自动拼成该患者的观察序列。</div>
+            </div>
+            <div class="field">
+              <label for="hourInput">记录时点（相对小时）<span class="req">*</span></label>
+              <input type="text" id="hourInput" value="1" inputmode="numeric">
+              <div class="hint">第 1 小时为观察起点。同一患者按小时递增录入可让趋势类判断生效。</div>
+            </div>
+            <div class="field">
+              <label for="ageInput">年龄（岁）</label>
+              <input type="text" id="ageInput" placeholder="例如 68" inputmode="numeric">
+            </div>
+            <div class="field">
+              <label for="genderInput">性别</label>
+              <select id="genderInput">
+                <option value="">未填写</option>
+                <option value="0">女</option>
+                <option value="1">男</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:var(--sp-3);">
+            <label for="noteInput">本次记录备注</label>
+            <textarea id="noteInput" placeholder="例如：夜间值班巡视发现意识模糊，已通知值班医师"></textarea>
+          </div>
+
+          <div class="config-actions">
+            <span class="faint" style="font-size:11px;margin-right:auto;">快捷填入：</span>
+            <button class="chip" data-preset="normal">常见正常值</button>
+            <button class="chip" data-preset="infection">感染指标升高</button>
+            <button class="chip" data-preset="shock">感染性休克表现</button>
+            <button class="chip" data-preset="elderly">高龄基础状态</button>
+            <button class="chip" data-preset="clear">全部清空</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 右：试算结论 ================= -->
+      <section class="panel is-sticky">
+        <div class="panel-head">
+          <div class="panel-title">
+            <span>即时试算结论</span>
+            <span class="sub" id="trialSub">录入后自动评估，不写入存储</span>
+          </div>
+          <div class="panel-tools">
+            <button class="btn is-ghost" id="assessBtn">立即评估</button>
+          </div>
+        </div>
+        <div class="panel-body" id="trialBody">
+          <p class="dim" style="font-size:12px;">
+            尚未录入任何指标。拖动左侧滑条后，这里会立即给出风险分级、告警依据与处置建议。
+          </p>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ================= 指标录入区 ================= -->
+    <section class="panel" id="entryPanel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span>指标录入</span>
+          <span class="sub" id="entrySub">滑条范围对应生理可能取值区间；绿区为临床常见，黄区需注意，红区为明显异常</span>
+        </div>
+        <div class="panel-tools">
+          <label class="switch" title="只显示已录入的指标">
+            <input type="checkbox" id="onlySet">
+            <span class="track"></span>
+            <span>只看已录入</span>
+          </label>
+          <button class="btn is-ghost" id="reloadSchema">重新加载字段</button>
+        </div>
+      </div>
+      <div class="panel-body" id="entryGroups">
+        <p class="dim" style="font-size:12px;">正在读取字段定义…</p>
+      </div>
+      <div class="panel-foot">
+        <span id="footHint">—</span>
+        <span class="faint">所有取值在提交时由后端再次校验，超出可接受范围的输入会被拒绝并给出原因。</span>
+      </div>
+    </section>
+
+    <!-- ================= 操作 ================= -->
+    <section class="panel">
+      <div class="panel-body">
+        <div class="config-actions" style="margin-top:0;border-top:0;padding-top:0;">
+          <button class="btn is-primary" id="submitBtn">提交并保存本次记录</button>
+          <button class="btn" id="assessBtn2">仅试算（不保存）</button>
+          <button class="btn is-ghost" id="toReportBtn">打开报告中心</button>
+          <button class="btn is-danger" id="clearPatientBtn" disabled>删除该患者已录入数据</button>
+        </div>
+        <div class="result-box" id="submitResult" style="display:none;"></div>
+      </div>
+    </section>
+
+    <!-- ================= 该患者历史 ================= -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span>该患者已录入的观察序列</span>
+          <span class="sub">按小时排列，是风险判断的依据来源</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="historyBody">
+          <p class="dim" style="font-size:12px;">录入并保存后，这里会显示该患者各时点的记录。</p>
+        </div>
+      </div>
+    </section>
+
+    <p class="disclaimer-inline">
+      <b>本系统输出的是风险提示，不构成医疗诊断，临床决策请遵医嘱。</b>
+      手动录入的数据仅保存在本服务进程内存中，服务重启即清空，不会写入磁盘。
+      正式使用时请通过「数据接入」连接院内系统，避免人工转录误差。
+    </p>
+    <p class="disclaimer-inline">
+      数据来源（模型训练与验证）：Reyna MA, Josef CS, Jeter R, et al.
+      Early Prediction of Sepsis From Clinical Data: The PhysioNet/Computing in
+      Cardiology Challenge 2019. Critical Care Medicine, 48(2):210-217, 2019.
+      许可 CC BY 4.0，DOI 10.13026/v64v-d857
+    </p>
+
+  </main>
+</div>
+
+<script src="js/charts.js"></script>
+<script src="js/varspec.js"></script>
+<script>window.SGBakedSnapshot = true;</script>
+<script src="js/sim-core.js"></script>
+<script src="js/manual.js"></script>
+</body>
+</html>

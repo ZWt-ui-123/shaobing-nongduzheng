@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>哨兵 SepsisGuard · 接口文档</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/console.css">
+<link rel="stylesheet" href="css/connect.css">
+</head>
+<body>
+<div class="app">
+
+  <nav class="nav" aria-label="主导航">
+    <div class="nav-brand">
+      <div class="nav-logo">哨</div>
+      <div class="nav-brand-text">
+        <div class="nav-title">哨兵 SepsisGuard</div>
+        <div class="nav-sub">脓毒症早期预警平台</div>
+      </div>
+    </div>
+
+    <div class="nav-items">
+      <a class="nav-item" href="console.html">
+        <span class="nav-icon">▤</span><span>临床控制台</span>
+      </a>
+      <a class="nav-item" href="connect.html">
+        <span class="nav-icon">⇄</span><span>数据接入</span>
+      </a>
+      <a class="nav-item" href="live.html">
+        <span class="nav-icon">◉</span><span>动态监护</span>
+      </a>
+      <a class="nav-item" href="manual.html">
+        <span class="nav-icon">✎</span><span>手动录入</span>
+      </a>
+      <a class="nav-item" href="report.html">
+        <span class="nav-icon">▦</span><span>报告中心</span>
+      </a>
+      <a class="nav-item" href="timeline.html">
+        <span class="nav-icon">☰</span><span>观察日志</span>
+      </a>
+      <a class="nav-item" href="monitor.html">
+        <span class="nav-icon">◈</span><span>运维监控</span>
+      </a>
+    </div>
+
+    <div class="nav-foot">
+      <div id="svcState">检测服务…</div>
+    </div>
+  </nav>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">接口文档</div>
+      <div class="topbar-desc">院内系统对接说明 · 报文格式 · 在线联调</div>
+    </div>
+    <div class="topbar-ticker">
+      <div class="ticker-item"><span>接口版本</span><b>v1</b></div>
+      <div class="conn" id="connBox" title="服务连接状态">
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connText">检测中…</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- 服务地址 -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span>服务地址</span>
+          <span class="sub">院内本地化部署，默认只监听本机</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="kv-list">
+          <div class="kv"><span class="k">服务基地址</span><span class="v accent" id="baseUrl">http://127.0.0.1:8000</span></div>
+          <div class="kv"><span class="k">健康检查</span><span class="v mono">GET /api/health</span></div>
+          <div class="kv"><span class="k">在线调试台</span><span class="v mono">GET /docs</span></div>
+          <div class="kv"><span class="k">接口定义文件</span><span class="v mono">GET /openapi.json</span></div>
+          <div class="kv"><span class="k">鉴权</span><span class="v">当前版本由部署方在网络层限制来源，接口本身不额外校验令牌</span></div>
+        </div>
+        <div class="doc-note">
+          <span id="svcHint">正在检测本机服务…</span>
+          <button class="btn is-ghost" id="recheckBtn" style="margin-left:10px;">重新检测</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 四种对接方式 -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span>对接方式</span>
+          <span class="sub">按对方系统现有能力选一种即可</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="doc-grid">
+
+          <div class="doc-card">
+            <div class="doc-card-head">
+              <span class="doc-tag">HL7 v2.x</span>
+              <span class="doc-card-title">检验系统 / 监护中央站</span>
+            </div>
+            <table class="doc-table">
+              <tr><td>对方推送</td><td class="mono">POST /api/ingest/hl7</td></tr>
+              <tr><td>报文类型</td><td class="mono">ORU^R01（检验回报）</td></tr>
+              <tr><td>编码要求</td><td>OBX-3 用 LOINC 编码</td></tr>
+              <tr><td>单位校验</td><td>与常用单位不符时拒收并在返回中列出</td></tr>
+            </table>
+            <p class="doc-card-note">院内最常用。支持标准分段符，也支持非标准分段符与
+              <span class="mono">&lt;</span>、<span class="mono">&gt;</span> 前缀数值。</p>
+          </div>
+
+          <div class="doc-card">
+            <div class="doc-card-head">
+              <span class="doc-tag">FHIR R4</span>
+              <span class="doc-card-title">已建 FHIR 平台的机构</span>
+            </div>
+            <table class="doc-table">
+              <tr><td>系统主动拉</td><td class="mono">GET {base}/Observation</td></tr>
+              <tr><td>资源</td><td class="mono">Observation / Patient</td></tr>
+              <tr><td>必需配置</td><td>接入地址、可选令牌、患者过滤条件</td></tr>
+              <tr><td>入口</td><td>数据接入 → FHIR 资源 → 自检连通性</td></tr>
+            </table>
+            <p class="doc-card-note">按时间窗轮询，字段按 LOINC 与显示名双通道映射。</p>
+          </div>
+
+          <div class="doc-card">
+            <div class="doc-card-head">
+              <span class="doc-tag">REST / JSON</span>
+              <span class="doc-card-title">院内网关 / 养老机构平台</span>
+            </div>
+            <table class="doc-table">
+              <tr><td>系统主动拉</td><td class="mono">GET {自定义地址}</td></tr>
+              <tr><td>返回格式</td><td>JSON 数组，字段名可用别名</td></tr>
+              <tr><td>别名示例</td><td class="mono">heart_rate → HR</td></tr>
+              <tr><td>入口</td><td>数据接入 → REST 接口 → 自检连通性</td></tr>
+            </table>
+            <p class="doc-card-note">支持字段名映射表，无需对方改造接口。</p>
+          </div>
+
+          <div class="doc-card">
+            <div class="doc-card-head">
+              <span class="doc-tag">Webhook</span>
+              <span class="doc-card-title">监护设备网关 / 可穿戴平台</span>
+            </div>
+            <table class="doc-table">
+              <tr><td>对方推送</td><td class="mono">POST /api/ingest/webhook</td></tr>
+              <tr><td>请求体</td><td>JSON，含患者编号与指标</td></tr>
+              <tr><td>装配队列</td><td class="mono">POST /api/ingest/webhook/drain</td></tr>
+              <tr><td>接收统计</td><td class="mono">GET /api/ingest/webhook/stats</td></tr>
+            </table>
+            <p class="doc-card-note">数据先入缓冲区，确认后再装配成队列，避免半条数据进入评分。</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 联调 -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span>本地联调</span>
+          <span class="sub">用示例报文走一次真实接收链路</span>
+        </div>
+        <div class="panel-tools">
+          <button class="btn" id="demoBtn">接收示例报文</button>
+          <button class="btn is-ghost" id="sampleBtn">查看示例报文</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <p class="doc-lead">
+          示例报文含三位患者：标准分段符、非标准分段符（<span class="mono">#</span>）、
+          <span class="mono">&lt;7.28</span> 与 <span class="mono">&gt;110</span> 前缀数值、
+          单位不符的肌酐、以及两个未纳入本系统的字段，用来检验解析与拒绝行为。
+        </p>
+        <pre class="doc-code" id="resultBox">点击「接收示例报文」后，这里显示解析结果与落库条数。</pre>
+      </div>
+    </section>
+
+    <!-- 端点清单 -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>接口清单</span></div>
+      </div>
+      <div class="panel-body is-flush">
+        <div class="table-wrap" style="max-height:none;">
+          <table class="grid" id="endpointTable">
+            <thead>
+              <tr>
+                <th>方法</th>
+                <th>路径</th>
+                <th>用途</th>
+                <th>请求要点</th>
+              </tr>
+            </thead>
+            <tbody id="endpointBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 报文示例 -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span>报文示例</span>
+          <span class="sub">可直接复制给对方系统开发人员</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <h3 class="doc-h3">HL7 v2.x · ORU^R01 检验回报</h3>
+        <pre class="doc-code">MSH|^~\&amp;|LIS|CENTRAL_HOSP|SEPSISGUARD|ICU|20260301080000||ORU^R01|MSG0001|P|2.5
+PID|1||HL7P001^^^CENTRAL^MR||ZHANG^SAN||19500101|M
+OBR|1|||SEPSIS_PANEL||20260301080000
+OBX|1|NM|8867-4^Heart rate^LN||124|/min|||||F|||20260301080000
+OBX|2|NM|2708-6^Oxygen saturation^LN||90|%|||||F|||20260301080000
+OBX|3|NM|9279-1^Respiratory rate^LN||27|/min|||||F|||20260301080000
+OBX|4|NM|8310-5^Body temperature^LN||38.9|Cel|||||F|||20260301080000
+OBX|5|NM|8480-6^Systolic BP^LN||86|mm[Hg]|||||F|||20260301080000
+OBX|7|NM|2524-7^Lactate^LN||3.8|mmol/L|||||F|||20260301074500</pre>
+        <p class="doc-lead">发送方式（对方系统把报文 POST 到本机即可）：</p>
+        <pre class="doc-code">curl -X POST http://127.0.0.1:8000/api/ingest/hl7 \
+  -H "Content-Type: application/json" \
+  -d "{\"message\": \"MSH|^~\\&amp;|LIS|...\", \"source_label\": \"HIS-LIS-01\"}"</pre>
+
+        <h3 class="doc-h3">设备推送 · JSON</h3>
+        <pre class="doc-code">POST /api/ingest/webhook
+{
+  "patient_id": "P001",
+  "record_time": "2026-03-01T08:00:00",
+  "values": { "HR": 124, "O2Sat": 90, "Resp": 27, "Temp": 38.9, "SBP": 86 }
+}</pre>
+
+        <h3 class="doc-h3">接收结果</h3>
+        <pre class="doc-code">{
+  "ok": true,
+  "protocol": "HL7 v2.x",
+  "n_messages": 3,
+  "message_types": { "ORU": 3 },
+  "patients": ["HL7P001", "HL7P002", "HL7P003"],
+  "n_observations": 5,
+  "stored_entries": 5,
+  "variables": ["HR", "O2Sat", "Temp", "SBP", "DBP", "Resp", "Lactate", "WBC", "Platelets", "BUN", "Creatinine", "pH", "Age", "Gender"],
+  "unmapped": ["CULTURE", "heparin_dose"],
+  "unit_rejected": ["Creatinine=115.0 单位「umol/L」与常用单位不符，已拒收"],
+  "elapsed_ms": 7.76
+}</pre>
+      </div>
+    </section>
+
+    <!-- 拒绝原因 -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>被拒绝的常见原因</span></div>
+      </div>
+      <div class="panel-body is-flush">
+        <div class="table-wrap" style="max-height:none;">
+          <table class="grid">
+            <thead>
+              <tr><th>返回中的字段</th><th>含义</th><th>处理方式</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">unmapped</td><td>字段名或 LOINC 编码不在本系统的变量字典内</td><td>确认指标是否需要纳入；如需纳入，在变量字典中补充映射</td></tr>
+              <tr><td class="mono">unit_rejected</td><td>单位与常用单位不符（例：肌酐用 umol/L 而系统按 mg/dL 解读）</td><td>让对方按常用单位发送，或在适配器中配置换算</td></tr>
+              <tr><td class="mono">ok: false</td><td>报文为空、缺少患者编号，或未解析出任何可识别观测</td><td>核对 PID-3 患者编号与 OBX-3 编码</td></tr>
+              <tr><td class="mono">ok: false</td><td>缺少患者编号（patient_id / pid / subject / mrn）</td><td>推送体必须带患者唯一编号</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div>本系统输出的是风险提示，不构成医疗诊断，临床决策请遵医嘱。</div>
+        <div class="faint">数据来源：PhysioNet/CinC Challenge 2019 脓毒症数据集（Reyna MA 等，DOI: 10.13026/v64v-d857，许可 CC BY 4.0）。</div>
+      </div>
+    </footer>
+
+  </main>
+</div>
+
+<script src="js/api-docs.js"></script>
+</body>
+</html>

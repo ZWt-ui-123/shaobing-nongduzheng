@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>哨兵 SepsisGuard · 临床预警控制台</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/console.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ================= 左侧导航 ================= -->
+  <nav class="nav" aria-label="主导航">
+    <div class="nav-brand">
+      <div class="nav-logo">哨</div>
+      <div class="nav-brand-text">
+        <div class="nav-title">哨兵 SepsisGuard</div>
+        <div class="nav-sub">脓毒症早期预警平台</div>
+      </div>
+    </div>
+
+    <div class="nav-items">
+      <div class="nav-item is-active" data-view="all">
+        <span class="nav-icon">▤</span><span>全部在监</span>
+        <span class="nav-count" id="navCountAll">—</span>
+      </div>
+      <div class="nav-item" data-view="critical">
+        <span class="nav-icon">◆</span><span>极高风险</span>
+        <span class="nav-count" id="navCountCritical">—</span>
+      </div>
+      <div class="nav-item" data-view="high">
+        <span class="nav-icon">▲</span><span>高风险</span>
+        <span class="nav-count" id="navCountHigh">—</span>
+      </div>
+      <div class="nav-item" data-view="rising">
+        <span class="nav-icon">↗</span><span>风险上升</span>
+        <span class="nav-count" id="navCountRising">—</span>
+      </div>
+      <div class="nav-item" data-view="gaps">
+        <span class="nav-icon">◌</span><span>信息缺口</span>
+        <span class="nav-count" id="navCountGaps">—</span>
+      </div>
+      <div class="nav-item" data-view="septic">
+        <span class="nav-icon">✚</span><span>已发作</span>
+        <span class="nav-count" id="navCountSeptic">—</span>
+      </div>
+
+      <div class="nav-item" data-view="handover">
+        <span class="nav-icon">⇄</span><span>交接班清单</span>
+      </div>
+      <div class="nav-item" id="navExport">
+        <span class="nav-icon">⤓</span><span>导出当前视图</span>
+      </div>
+      <a class="nav-item" href="connect.html" style="text-decoration:none;">
+        <span class="nav-icon">⇄</span><span>数据接入</span>
+      </a>
+      <a class="nav-item" href="live.html" style="text-decoration:none;">
+        <span class="nav-icon">◉</span><span>动态监护</span>
+      </a>
+      <a class="nav-item" href="manual.html" style="text-decoration:none;">
+        <span class="nav-icon">✎</span><span>手动录入</span>
+      </a>
+      <a class="nav-item" href="report.html" style="text-decoration:none;">
+        <span class="nav-icon">▦</span><span>报告中心</span>
+      </a>
+      <a class="nav-item" href="timeline.html" style="text-decoration:none;">
+        <span class="nav-icon">☰</span><span>观察日志</span>
+      </a>
+      <a class="nav-item" href="dashboard.html" style="text-decoration:none;">
+        <span class="nav-icon">▤</span><span>经典看板</span>
+      </a>
+      <a class="nav-item" href="monitor.html" style="text-decoration:none;">
+        <span class="nav-icon">◈</span><span>运维监控</span>
+      </a>
+    </div>
+
+    <div class="nav-foot">
+      <div id="navModel">模型版本：—</div>
+      <div id="navThreshold">分级阈值：—</div>
+    </div>
+  </nav>
+
+  <!-- ================= 顶部状态条 ================= -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="viewTitle">全部在监</div>
+      <div class="topbar-desc" id="viewDesc">按综合风险降序</div>
+    </div>
+
+    <div class="topbar-ticker">
+      <div class="ticker-item is-optional">
+        <span>在监</span><b id="tkPatients">—</b>
+      </div>
+      <div class="ticker-item is-critical">
+        <span>极高</span><b id="tkCritical">—</b>
+      </div>
+      <div class="ticker-item is-high">
+        <span>高</span><b id="tkHigh">—</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>待处理告警</span><b id="tkAlerts">—</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>中位提前量</span><b id="tkLead">—</b><span>h</span>
+      </div>
+      <div class="conn" id="connBox" title="后端连接状态">
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connText">连接中…</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= 内容区 ================= -->
+  <main class="content">
+
+    <!-- Hero 决策句：整个病区的一句话结论 -->
+    <section class="hero" id="hero">
+      <div class="hero-main">
+        <div class="hero-eyebrow">病区态势</div>
+        <div class="hero-sentence" id="heroSentence">正在汇总病区风险…</div>
+        <div class="hero-note" id="heroNote">—</div>
+      </div>
+      <div class="hero-facts" id="heroFacts">
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactCritical">—</div>
+          <div class="hero-fact-label">极高风险</div>
+        </div>
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactHigh">—</div>
+          <div class="hero-fact-label">高风险</div>
+        </div>
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactCoverage">—</div>
+          <div class="hero-fact-label">预警覆盖率</div>
+        </div>
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactGaps">—</div>
+          <div class="hero-fact-label">信息缺口</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 数据脉象层：数据新鲜度与覆盖度，把不确定性显式化 -->
+    <section class="vitals-strip" id="vitalsStrip" aria-label="数据脉象"></section>
+
+    <!-- 最高优先级告警条 -->
+    <section id="alertStripHost"></section>
+
+    <!-- 主视图：高密度患者表格 -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span id="panelTitle">患者风险清单</span>
+          <span class="sub" id="panelSub">—</span>
+        </div>
+        <div class="panel-tools">
+          <div class="segmented" id="segmentTools">
+            <button class="is-active" data-mode="clinical">临床判定</button>
+            <button data-mode="uncertainty">不确定性</button>
+            <button data-mode="workload">工作量</button>
+          </div>
+          <input class="input" id="searchInput" type="search"
+                 placeholder="搜索 患者编号 / 床号" autocomplete="off" style="width:190px;">
+          <select class="select" id="sortSelect">
+            <option value="risk">按综合风险</option>
+            <option value="peak">按峰值风险</option>
+            <option value="trend">按风险增速</option>
+            <option value="incomplete">按信息缺口</option>
+            <option value="los">按住院时长</option>
+            <option value="bed">按床号</option>
+          </select>
+          <label class="switch" title="每 20 秒自动刷新">
+            <input type="checkbox" id="autoRefresh" checked>
+            <span class="track"></span>
+            <span>自动</span>
+          </label>
+          <button class="btn is-ghost" id="refreshBtn">刷新</button>
+        </div>
+      </div>
+
+      <div class="panel-body is-flush">
+        <div class="table-wrap" id="tableWrap">
+          <table class="grid" id="patientTable">
+            <thead>
+              <tr id="tableHead"></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="tableEmpty" style="display:none;">
+          <div class="empty-icon">◌</div>
+          <div class="empty-title">当前视图没有符合条件的患者</div>
+          <div class="empty-desc">调整筛选条件或切换左上角的临床视图</div>
+        </div>
+      </div>
+
+      <div class="panel-foot" id="panelFoot">
+        <span id="footRange">—</span>
+        <span class="faint" id="footPerf">—</span>
+        <span class="faint" style="margin-left:0;">
+          快捷键 <span class="kbd">J</span><span class="kbd">K</span> 移动 ·
+          <span class="kbd">Enter</span> 打开 ·
+          <span class="kbd">/</span> 搜索 ·
+          <span class="kbd">1</span>–<span class="kbd">6</span> 切视图 ·
+          <span class="kbd">Esc</span> 关闭
+        </span>
+      </div>
+    </section>
+
+    <p class="disclaimer-inline">
+      <b>本系统输出的是风险提示，不构成医疗诊断，临床决策请遵医嘱。</b>
+      分级阈值按当前队列分布标定；模型归因与信息缺口仅用于辅助判断，不替代医护评估。
+    </p>
+    <p class="disclaimer-inline">
+      数据来源（模型训练与验证）：Reyna MA, Josef CS, Jeter R, et al.
+      Early Prediction of Sepsis From Clinical Data: The PhysioNet/Computing in
+      Cardiology Challenge 2019. Critical Care Medicine, 48(2):210-217, 2019.
+      许可 CC BY 4.0，DOI 10.13026/v64v-d857
+    </p>
+
+  </main>
+</div>
+
+<!-- ================= 患者详情抽屉 ================= -->
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="患者详情">
+  <div class="drawer-head">
+    <div class="drawer-head-main">
+      <div class="drawer-title" id="drawerTitle">—</div>
+      <div class="drawer-sub" id="drawerSub">—</div>
+    </div>
+    <button class="icon-btn" id="drawerClose" title="关闭（Esc）">✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<!-- ================= 忽略原因模态框 ================= -->
+<div class="modal-backdrop" id="reasonModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">忽略本条告警</div>
+      <div class="modal-sub">
+        忽略原因会写入告警日志，用于假阳性复盘。
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="radio-list" id="reasonOptions">
+        <label class="radio-item is-on" data-reason="已知病情">
+          <input type="radio" name="ignoreReason" value="已知病情" checked>
+          <span>已知病情，无需重复提示</span>
+        </label>
+        <label class="radio-item" data-reason="数据异常">
+          <input type="radio" name="ignoreReason" value="数据异常">
+          <span>数据异常（监护仪误差 / 录入错误）</span>
+        </label>
+        <label class="radio-item" data-reason="已处理">
+          <input type="radio" name="ignoreReason" value="已处理">
+          <span>已处理，正在干预中</span>
+        </label>
+        <label class="radio-item" data-reason="其他">
+          <input type="radio" name="ignoreReason" value="其他">
+          <span>其他原因</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn is-ghost" id="reasonCancel">取消</button>
+      <button class="btn is-danger" id="reasonConfirm">确认忽略</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/demo-data.js"></script>
+<script src="js/baked-data.js"></script>
+<script>window.SGBakedSnapshot = true;</script>
+<script src="js/charts.js"></script>
+<script src="js/console.js"></script>
+</body>
+</html>

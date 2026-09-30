@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>哨兵 SepsisGuard · 数据接入</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/console.css">
+<link rel="stylesheet" href="css/connect.css">
+</head>
+<body>
+<div class="app">
+
+  <nav class="nav" aria-label="主导航">
+    <div class="nav-brand">
+      <div class="nav-logo">哨</div>
+      <div class="nav-brand-text">
+        <div class="nav-title">哨兵 SepsisGuard</div>
+        <div class="nav-sub">脓毒症早期预警平台</div>
+      </div>
+    </div>
+
+    <div class="nav-items">
+      <a class="nav-item" href="console.html">
+        <span class="nav-icon">▤</span><span>临床控制台</span>
+      </a>
+      <a class="nav-item is-active" href="connect.html">
+        <span class="nav-icon">⇄</span><span>数据接入</span>
+      </a>
+      <a class="nav-item" href="live.html">
+        <span class="nav-icon">◉</span><span>动态监护</span>
+      </a>
+      <a class="nav-item" href="manual.html">
+        <span class="nav-icon">✎</span><span>手动录入</span>
+      </a>
+      <a class="nav-item" href="report.html">
+        <span class="nav-icon">▦</span><span>报告中心</span>
+      </a>
+      <a class="nav-item" href="timeline.html">
+        <span class="nav-icon">☰</span><span>观察日志</span>
+      </a>
+      <a class="nav-item" href="monitor.html">
+        <span class="nav-icon">◈</span><span>运维监控</span>
+      </a>
+    </div>
+
+    <div class="nav-foot">
+      <div id="navActive">当前数据源：—</div>
+    </div>
+  </nav>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">数据接入</div>
+      <div class="topbar-desc">接入院内系统、养老平台与家庭设备</div>
+    </div>
+    <div class="topbar-ticker">
+      <div class="ticker-item"><span>已接入患者</span><b id="tkPatients">—</b></div>
+      <div class="ticker-item"><span>观测记录</span><b id="tkObs">—</b></div>
+      <div class="conn" id="connBox" title="后端连接状态">
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connText">连接中…</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <section class="hero">
+      <div class="hero-main">
+        <div class="hero-eyebrow">接入状态</div>
+        <div class="hero-sentence" id="heroSentence">正在读取数据源状态…</div>
+        <div class="hero-note" id="heroNote">—</div>
+      </div>
+      <div class="hero-facts">
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactActive">—</div>
+          <div class="hero-fact-label">当前数据源</div>
+        </div>
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactFetches">—</div>
+          <div class="hero-fact-label">拉取次数</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span>可用数据通路</span>
+        </div>
+        <div class="panel-tools">
+          <button class="btn is-ghost" id="refreshBtn">刷新状态</button>
+          <a class="btn is-ghost" href="api.html">接口文档</a>
+          <button class="btn is-ghost" id="docsBtn" title="打开本机接口调试台（需后端服务）">在线调试台</button>
+        </div>
+      </div>
+      <div class="panel-body is-flush">
+        <div class="grid-cards" id="pathGrid"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="configPanel" style="display:none;">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span id="configTitle">连接配置</span>
+          <span class="sub" id="configSub">—</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="form-grid" id="configForm"></div>
+        <div class="config-actions">
+          <button class="btn" id="probeBtn">① 自检连通性</button>
+          <button class="btn is-primary" id="activateBtn">② 接入并拉取数据</button>
+          <button class="btn is-ghost" id="sampleBtn">读取原始样本</button>
+        </div>
+        <div class="result-box" id="resultBox" style="display:none;"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="scenarioPanel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span>监护场景与数据可获得性</span>
+          <span class="sub">各场景的采样密度与可测项</span>
+        </div>
+      </div>
+      <div class="panel-body is-flush">
+        <div class="table-wrap" style="max-height:none;">
+          <table class="grid" id="scenarioTable">
+            <thead>
+              <tr>
+                <th>监护场景</th>
+                <th class="num">生命体征间隔</th>
+                <th class="num">检验间隔</th>
+                <th class="num">可测变量数</th>
+                <th>信息完整度</th>
+                <th>说明</th>
+              </tr>
+            </thead>
+            <tbody id="scenarioBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel-foot">
+        <span class="faint">
+          信息完整度 = 可测变量覆盖率 × 采样频率 × 缺失率折减。
+        </span>
+      </div>
+    </section>
+
+    <section class="panel" id="historyPanel">
+      <div class="panel-head">
+        <div class="panel-title"><span>自检历史</span></div>
+      </div>
+      <div class="panel-body">
+        <div class="history-list" id="probeHistory">
+          <p class="dim" style="font-size:12px;">尚无自检记录。</p>
+        </div>
+      </div>
+    </section>
+
+    <p class="disclaimer-inline">
+      <b>本系统输出的是风险提示，不构成医疗诊断，临床决策请遵医嘱。</b>
+      接入真实临床数据时请遵守所在机构的数据安全与隐私管理规定；
+      连接凭据仅保存在服务进程内存中，不写入磁盘、不记入日志。
+    </p>
+    <p class="disclaimer-inline">
+      数据来源（模型训练与验证）：Reyna MA, Josef CS, Jeter R, et al.
+      Early Prediction of Sepsis From Clinical Data: The PhysioNet/Computing in
+      Cardiology Challenge 2019. Critical Care Medicine, 48(2):210-217, 2019.
+      许可 CC BY 4.0，DOI 10.13026/v64v-d857
+    </p>
+
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/varspec.js"></script>
+<script>window.SGBakedSnapshot = true;</script>
+<script src="js/sim-core.js"></script>
+<script src="js/connect.js"></script>
+</body>
+</html>

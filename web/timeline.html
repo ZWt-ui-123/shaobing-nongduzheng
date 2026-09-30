@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>哨兵 SepsisGuard · 病程观察日志</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/console.css">
+<link rel="stylesheet" href="css/connect.css">
+</head>
+<body>
+<div class="app">
+
+  <nav class="nav" aria-label="主导航">
+    <div class="nav-brand">
+      <div class="nav-logo">哨</div>
+      <div class="nav-brand-text">
+        <div class="nav-title">哨兵 SepsisGuard</div>
+        <div class="nav-sub">脓毒症早期预警平台</div>
+      </div>
+    </div>
+
+    <div class="nav-items">
+      <a class="nav-item" href="console.html">
+        <span class="nav-icon">▤</span><span>临床控制台</span>
+      </a>
+      <a class="nav-item" href="connect.html">
+        <span class="nav-icon">⇄</span><span>数据接入</span>
+      </a>
+      <a class="nav-item" href="live.html">
+        <span class="nav-icon">◉</span><span>动态监护</span>
+      </a>
+      <a class="nav-item" href="manual.html">
+        <span class="nav-icon">✎</span><span>手动录入</span>
+      </a>
+      <a class="nav-item" href="report.html">
+        <span class="nav-icon">▦</span><span>报告中心</span>
+      </a>
+      <a class="nav-item is-active" href="timeline.html">
+        <span class="nav-icon">☰</span><span>观察日志</span>
+      </a>
+      <a class="nav-item" href="monitor.html">
+        <span class="nav-icon">◈</span><span>运维监控</span>
+      </a>
+    </div>
+
+    <div class="nav-items" id="navPatients">
+      <div class="dim" style="padding:6px var(--sp-3);font-size:11px;">读取中…</div>
+    </div>
+
+    <div class="nav-foot">
+      <div id="navStats">存储：—</div>
+    </div>
+  </nav>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="pageTitle">病程观察日志</div>
+      <div class="topbar-desc">
+        每位患者一份独立日志，按时间顺序记录
+      </div>
+    </div>
+    <div class="topbar-ticker">
+      <div class="ticker-item is-optional">
+        <span>当前患者</span><b id="tkPatient">—</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>记录条数</span><b id="tkEntries">—</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>覆盖时段</span><b id="tkRange">—</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>已落盘</span><b id="tkPersisted">—</b>
+      </div>
+      <div class="live-flag" id="flagSource">存储位置：检测中…</div>
+      <div class="conn" id="connBox" title="数据来源状态">
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connText">检测中…</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <section class="hero">
+      <div class="hero-main">
+        <div class="hero-eyebrow">日志存储</div>
+        <div class="hero-sentence" id="heroSentence">
+          正在读取日志存储…
+        </div>
+        <div class="hero-note" id="heroNote">
+          每位患者一份日志文件；动态监护产生的事件在推进后立即落盘。
+        </div>
+      </div>
+      <div class="hero-facts">
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactPatients">—</div>
+          <div class="hero-fact-label">有日志的患者</div>
+        </div>
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactEntries">—</div>
+          <div class="hero-fact-label">日志总条数</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="split">
+
+      <!-- 左：日志正文 -->
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <span id="logTitle">观察日志</span>
+            <span class="sub" id="logSub">从右侧选择一位患者</span>
+          </div>
+          <div class="panel-tools">
+            <select class="select" id="kindFilter">
+              <option value="all">全部类型</option>
+              <option value="admission">入院</option>
+              <option value="onset">病情变化</option>
+              <option value="intervention">临床干预</option>
+              <option value="alert">系统告警</option>
+              <option value="measurement">数据采集</option>
+              <option value="note">医护记录</option>
+              <option value="handover">交接班</option>
+              <option value="error">异常</option>
+            </select>
+            <button class="btn is-ghost" id="printBtn">打印</button>
+            <button class="btn is-ghost" id="mdBtn">导出 Markdown</button>
+          </div>
+        </div>
+        <div class="panel-body" id="logBody">
+          <p class="dim" style="font-size:12px;">
+            从右侧列表选择一位患者，或直接输入患者编号后点「读取」。
+          </p>
+        </div>
+      </section>
+
+      <!-- 右：患者列表 + 追加记录 -->
+      <section class="panel is-sticky">
+        <div class="panel-head">
+          <div class="panel-title">
+            <span>患者</span>
+            <span class="sub" id="subjectSub">按最近更新排序</span>
+          </div>
+          <div class="panel-tools">
+            <button class="btn is-ghost" id="reloadBtn">刷新</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="form-grid" style="grid-template-columns:1fr;">
+            <div class="field">
+              <label for="patientInput">患者编号</label>
+              <input type="text" id="patientInput" placeholder="例如 BED-12 / LIVE0007"
+                     autocomplete="off">
+              <div class="hint">也可直接在下方列表中点击。</div>
+            </div>
+          </div>
+          <div class="config-actions">
+            <button class="btn is-primary" id="loadBtn">读取该患者日志</button>
+            <button class="btn is-danger" id="clearBtn" disabled>删除该患者日志</button>
+          </div>
+
+          <div class="field" style="margin-top:var(--sp-3);">
+            <input class="input" id="subjectFilter" type="search"
+                   placeholder="筛选患者编号" autocomplete="off">
+          </div>
+          <div class="subject-list" id="subjectList">
+            <div class="dim" style="padding:10px;font-size:12px;">读取中…</div>
+          </div>
+
+          <div class="entry-group" style="margin-top:var(--sp-4);margin-bottom:0;">
+            <div class="entry-group-head">
+              <div class="entry-group-title">追加一条观察记录</div>
+            </div>
+            <div class="field">
+              <label for="noteHour">记录时点（相对小时，可留空）</label>
+              <input type="text" id="noteHour" placeholder="例如 12" inputmode="numeric">
+            </div>
+            <div class="field" style="margin-top:var(--sp-2);">
+              <label for="noteKind">记录类型</label>
+              <select id="noteKind">
+                <option value="note">医护记录</option>
+                <option value="handover">交接班</option>
+                <option value="intervention">临床干预</option>
+                <option value="onset">病情变化</option>
+              </select>
+            </div>
+            <div class="field" style="margin-top:var(--sp-2);">
+              <label for="noteText">记录内容</label>
+              <textarea id="noteText"
+                placeholder="例如：14:20 家属反映进食减少两天，尿量偏少，已通知值班医师"></textarea>
+            </div>
+            <div class="config-actions" style="margin-top:var(--sp-3);">
+              <button class="btn is-primary" id="noteBtn" disabled>写入日志</button>
+            </div>
+            <div class="result-box" id="noteResult" style="display:none;"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <p class="disclaimer-inline">
+      <b>本系统输出的是风险提示，不构成医疗诊断，临床决策请遵医嘱。</b>
+      日志内容由系统事件与人工记录共同构成，用于交接班与事后复盘；
+      它记录的是"观察到什么"，不等于诊断结论。
+    </p>
+    <p class="disclaimer-inline">
+      数据来源（模型训练与验证）：Reyna MA, Josef CS, Jeter R, et al.
+      Early Prediction of Sepsis From Clinical Data: The PhysioNet/Computing in
+      Cardiology Challenge 2019. Critical Care Medicine, 48(2):210-217, 2019.
+      许可 CC BY 4.0，DOI 10.13026/v64v-d857
+    </p>
+
+  </main>
+</div>
+
+<script src="js/charts.js"></script>
+<script src="js/varspec.js"></script>
+<script>window.SGBakedSnapshot = true;</script>
+<script src="js/sim-core.js"></script>
+<script src="js/timeline.js"></script>
+</body>
+</html>

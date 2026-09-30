@@ -1,0 +1,33 @@
+{
+  "built_at": "2026-09-30 10:35:42",
+  "source": "C:\\Users\\Admin\\Desktop\\DSH\\sepsis-guard",
+  "patched": {
+    "web/js/api.js": [
+      "request() 增加快照分支（仅当 window.SGBakedSnapshot 为真时生效）",
+      "新增 modeLabel()，给出如实的数据来源标签"
+    ],
+    "web/js/console.js": [
+      "状态灯优先用 modeLabel()"
+    ],
+    "web/js/doctor.js": [
+      "状态灯与页脚认识 snapshot 模式"
+    ],
+    "web/js/monitor.js": [
+      "状态灯与页脚认识 snapshot 模式"
+    ],
+    "web/js/manual.js": [
+      "navModel 存在性判断（该元素在本页不存在，原写法会抛错）"
+    ],
+    "web/js/sim-core.js": [
+      "probe() 在静态快照下直接判 builtin，不再发起注定 404 的探测"
+    ]
+  },
+  "added": [
+    "web/js/baked-data.js",
+    "评委使用说明.md",
+    ".nojekyll"
+  ],
+  "renamed": {
+    "index.html（经典看板）": "dashboard.html"
+  }
+}

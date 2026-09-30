@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>哨兵 SepsisGuard · 报告中心</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/console.css">
+<link rel="stylesheet" href="css/connect.css">
+</head>
+<body>
+<div class="app">
+
+  <nav class="nav" aria-label="主导航">
+    <div class="nav-brand">
+      <div class="nav-logo">哨</div>
+      <div class="nav-brand-text">
+        <div class="nav-title">哨兵 SepsisGuard</div>
+        <div class="nav-sub">脓毒症早期预警平台</div>
+      </div>
+    </div>
+
+    <div class="nav-items">
+      <a class="nav-item" href="console.html">
+        <span class="nav-icon">▤</span><span>临床控制台</span>
+      </a>
+      <a class="nav-item" href="connect.html">
+        <span class="nav-icon">⇄</span><span>数据接入</span>
+      </a>
+      <a class="nav-item" href="live.html">
+        <span class="nav-icon">◉</span><span>动态监护</span>
+      </a>
+      <a class="nav-item" href="manual.html">
+        <span class="nav-icon">✎</span><span>手动录入</span>
+      </a>
+      <a class="nav-item is-active" href="report.html">
+        <span class="nav-icon">▦</span><span>报告中心</span>
+      </a>
+      <a class="nav-item" href="timeline.html">
+        <span class="nav-icon">☰</span><span>观察日志</span>
+      </a>
+      <a class="nav-item" href="monitor.html">
+        <span class="nav-icon">◈</span><span>运维监控</span>
+      </a>
+    </div>
+
+    <div class="nav-items" id="navOrigins">
+      <div class="dim" style="padding:6px var(--sp-3);font-size:11px;">读取中…</div>
+    </div>
+
+    <div class="nav-foot">
+      <div id="navModel">模型：—</div>
+      <div id="navTotal">可报告对象：—</div>
+    </div>
+  </nav>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">报告中心</div>
+      <div class="topbar-desc">按患者生成结构化评估报告</div>
+    </div>
+    <div class="topbar-ticker">
+      <div class="ticker-item is-optional">
+        <span>当前对象</span><b id="tkPatient">—</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>风险分级</span><b id="tkLevel">—</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>告警</span><b id="tkAlerts">—</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>生成耗时</span><b id="tkElapsed">—</b>
+      </div>
+      <div class="live-flag" id="flagSource">评分来源：检测中…</div>
+      <div class="conn" id="connBox" title="数据来源状态">
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connText">检测中…</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- ================= 选择器 + 报告正文 ================= -->
+    <div class="split">
+
+      <!-- 左：报告正文 -->
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <span id="reportTitle">评估报告</span>
+            <span class="sub" id="reportSub">选择左侧的患者即可生成报告</span>
+          </div>
+          <div class="panel-tools reporter-controls">
+            <button class="btn is-ghost" id="printBtn">打印</button>
+            <button class="btn is-ghost" id="mdBtn">下载 Markdown</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="report-page" id="reportBody">
+            <div class="report-head">
+              <div class="report-title">尚未生成报告</div>
+              <div class="report-sub">
+                从右侧「可报告对象」中选择一位患者，或直接输入患者编号后点击「生成报告」。
+              </div>
+            </div>
+            <p class="dim" style="font-size:12px;">
+              报告包含：风险结论、告警明细（含抑制前后对比）、临床规则交叉核对、
+              指标逐项评估、信息缺口、模型归因、病程观察日志与五段式文字结论。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右：对象选择 -->
+      <section class="panel is-sticky">
+        <div class="panel-head">
+          <div class="panel-title">
+            <span>可报告对象</span>
+            <span class="sub" id="subjectSub">按数据来源分组</span>
+          </div>
+          <div class="panel-tools">
+            <button class="btn is-ghost" id="reloadBtn">刷新</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="form-grid" style="grid-template-columns:1fr;">
+            <div class="field">
+              <label for="originSelect">数据来源</label>
+              <select id="originSelect">
+                <option value="auto">自动识别（手动 → 动态 → 静态）</option>
+                <option value="manual">手动录入</option>
+                <option value="live">动态监护后端</option>
+                <option value="static">静态队列（数据集回放）</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="patientInput">患者编号</label>
+              <input type="text" id="patientInput" placeholder="例如 BED-12 / LIVE0007 / p000001"
+                     autocomplete="off">
+              <div class="hint">也可直接在下方列表中点击选择。</div>
+            </div>
+          </div>
+
+          <div class="config-actions">
+            <button class="btn is-primary" id="generateBtn">生成报告</button>
+            <button class="btn is-ghost" id="randomBtn">随机选一位</button>
+          </div>
+
+          <div class="field" style="margin-top:var(--sp-3);">
+            <input class="input" id="subjectFilter" type="search"
+                   placeholder="筛选患者编号 / 场景" autocomplete="off">
+          </div>
+
+          <div class="subject-list" id="subjectList">
+            <div class="dim" style="padding:10px;font-size:12px;">读取中…</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <p class="disclaimer-inline">
+      <b>本系统输出的是风险提示，不构成医疗诊断，临床决策请遵医嘱。</b>
+      报告中的分级阈值按队列风险分布标定而非固定绝对值，因此跨机构的分数不可直接比较；
+      模型性能与外部验证结果见 <code>docs/实验结果.md</code>。
+    </p>
+    <p class="disclaimer-inline">
+      数据来源（模型训练与验证）：Reyna MA, Josef CS, Jeter R, et al.
+      Early Prediction of Sepsis From Clinical Data: The PhysioNet/Computing in
+      Cardiology Challenge 2019. Critical Care Medicine, 48(2):210-217, 2019.
+      许可 CC BY 4.0，DOI 10.13026/v64v-d857
+    </p>
+
+  </main>
+</div>
+
+<script src="js/charts.js"></script>
+<script src="js/varspec.js"></script>
+<script>window.SGBakedSnapshot = true;</script>
+<script src="js/sim-core.js"></script>
+<script src="js/report.js"></script>
+</body>
+</html>

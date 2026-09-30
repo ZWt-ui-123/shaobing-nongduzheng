@@ -1,0 +1,292 @@
+/* ==========================================================================
+   哨兵 SepsisGuard —— 临床控制台布局层
+   ==========================================================================
+
+   本文件只承担**页面布局与组合**，不重复定义颜色/字号/间距——
+   那些属于设计令牌，见 tokens.css。
+
+   分层理由：令牌（tokens.css）回答"用哪些颜色与尺度"，
+   布局（本文件）回答"这些模块怎么摆"。改主题只动令牌，
+   改信息层级只动本文件。
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   主内容区分栏：Hero / 脉象 / 告警 / 表格 的纵向节奏
+   -------------------------------------------------------------------------- */
+.content > section,
+.content > .panel {
+  margin-bottom: var(--sp-4);
+}
+
+/* 最后一个块（免责声明段落）不需要下边距 */
+.content > .disclaimer-inline {
+  margin: 0;
+  padding: var(--sp-3) 0 0;
+  border-top: 1px solid var(--border);
+}
+
+/* --------------------------------------------------------------------------
+   Hero：左文右数
+   -------------------------------------------------------------------------- */
+.hero-sentence {
+  /* 决策句可能较长，限制行宽以保持可读性 */
+  max-width: 62ch;
+}
+.hero-note {
+  max-width: 70ch;
+}
+.hero-facts {
+  /* 数字块之间用竖线分隔，避免四个大数字糊在一起 */
+  align-items: center;
+}
+.hero-fact + .hero-fact {
+  padding-left: var(--sp-5);
+  border-left: 1px solid var(--border);
+}
+
+/* --------------------------------------------------------------------------
+   脉象层：小卡片网格，保持等宽以便纵向对比
+   -------------------------------------------------------------------------- */
+.vitals-strip {
+  align-items: stretch;
+}
+.vital-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 68px;
+}
+
+/* --------------------------------------------------------------------------
+   表格：列宽与对齐
+   -------------------------------------------------------------------------- */
+
+/* 临床判定模式：患者 | 风险 | 趋势 | 轨迹 | 建议 */
+table.grid th:nth-child(1) { width: 21%; }
+table.grid th:nth-child(2) { width: 19%; }
+table.grid th:nth-child(3) { width: 9%; }
+table.grid th:nth-child(4) { width: 19%; }
+table.grid th:nth-child(5) { width: 32%; }
+
+/* 轨迹画布需要固定高度，否则 canvas 会按属性宽高比撑开行高 */
+.risk-spark {
+  display: block;
+  width: 100%;
+  height: 16px;
+}
+td canvas.risk-spark[width="150"] {
+  height: 26px;
+}
+
+/* 风险分数与徽章同一行时的基线对齐 */
+.risk-cell .row1 {
+  align-items: baseline;
+}
+
+/* --------------------------------------------------------------------------
+   抽屉内部：分节之间的节奏与图表高度
+   -------------------------------------------------------------------------- */
+.drawer-body > .dsec + .dsec {
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--border);
+}
+
+.chart-box canvas {
+  /* canvas 的 CSS 宽度自适应容器，高度由属性控制并放大以适配高分屏 */
+  height: auto;
+}
+
+/* 抽屉里的 KPI 网格比面板里更紧凑（空间有限） */
+.drawer-body .kpi-row {
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+}
+.drawer-body .kpi-value {
+  font-size: var(--fs-lg);
+}
+
+/* 归因条：正负向在 50% 中线两侧展开 */
+.attr-bar {
+  position: relative;
+}
+.attr-bar::after {
+  /* 中线刻度，让"推高/抵消"的方向一眼可辨 */
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--border-hi);
+}
+
+/* --------------------------------------------------------------------------
+   患者轨迹：横向可滚动，节点不换行
+   -------------------------------------------------------------------------- */
+.track {
+  scrollbar-width: thin;
+}
+.track-node {
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   告警条：图标与操作区的对齐
+   -------------------------------------------------------------------------- */
+.alert-strip-icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+}
+.alert-strip-desc {
+  /* 一句话说明，最多两行 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   表头排序提示（可点击列）
+   -------------------------------------------------------------------------- */
+table.grid thead th.is-sortable::after {
+  content: "⇅";
+  opacity: 0.35;
+  margin-left: 4px;
+  font-size: 9px;
+}
+table.grid thead th.is-sorted::after {
+  content: "▼";
+  opacity: 0.9;
+}
+
+/* --------------------------------------------------------------------------
+   页脚：范围与性能提示左右分列
+   -------------------------------------------------------------------------- */
+.panel-foot {
+  min-height: 30px;
+}
+#loadMore {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   监护场景分区：每个场景一块，块内只列该场景的在监患者
+   -------------------------------------------------------------------------- */
+.scen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(430px, 1fr));
+  gap: var(--sp-3);
+}
+
+.scen-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.scen-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface-sunk, rgba(148, 163, 184, 0.08));
+  border-bottom: 1px solid var(--border);
+}
+
+.scen-name {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.scen-count {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--accent-hi, #7dd3fc);
+}
+
+.scen-tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: var(--fs-2xs);
+  background: rgba(148, 163, 184, 0.16);
+  color: var(--text-dim);
+}
+
+.scen-tag.is-high {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+}
+
+.scen-mean {
+  font-family: var(--font-mono, var(--mono, monospace));
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.scen-meta {
+  margin-left: auto;
+  font-size: var(--fs-2xs);
+  color: var(--text-muted);
+}
+
+.scen-body {
+  max-height: 268px;
+  overflow: auto;
+}
+
+.scen-empty {
+  padding: var(--sp-4);
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+table.grid.is-compact thead th,
+table.grid.is-compact tbody td {
+  padding: 5px var(--sp-2);
+  font-size: var(--fs-sm);
+}
+
+table.grid.is-compact tbody tr {
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   打印：临床场景常需要打印交班清单
+   -------------------------------------------------------------------------- */
+@media print {
+  .nav, .topbar-ticker, .panel-tools, .alert-strip-actions, .drawer,
+  .drawer-backdrop, .modal-backdrop {
+    display: none !important;
+  }
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-areas: "content";
+    height: auto;
+  }
+  .content {
+    overflow: visible;
+    padding: 0;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .panel, .hero, .vital-cell, .attr-item {
+    border-color: #999;
+    background: #fff;
+  }
+  table.grid thead th {
+    background: #eee;
+    color: #000;
+  }
+  table.grid tbody tr {
+    break-inside: avoid;
+  }
+}

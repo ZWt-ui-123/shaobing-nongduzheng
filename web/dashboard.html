@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>哨兵 SepsisGuard · 医生端</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============================ 顶部栏 ============================ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-logo">SG</div>
+    <div class="brand-text">
+      <div class="brand-title">哨兵 <span class="en">SepsisGuard</span></div>
+      <div class="brand-sub">住院患者脓毒症早期预警与远程监护平台</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="conn" id="connBox" title="后端连接状态">
+      <span class="conn-dot" id="connDot"></span>
+      <span class="conn-text" id="connText">正在连接后端…</span>
+    </div>
+    <span class="refresh-info" id="refreshInfo">—</span>
+    <a class="nav-link" href="console.html">临床控制台 ›</a>
+    <a class="nav-link" href="connect.html">数据接入 ›</a>
+    <a class="nav-link" href="live.html">动态监护 ›</a>
+    <a class="nav-link" href="manual.html">手动录入 ›</a>
+    <a class="nav-link" href="report.html">报告中心 ›</a>
+    <a class="nav-link" href="timeline.html">观察日志 ›</a>
+    <a class="nav-link" href="monitor.html">运维监控 ›</a>
+  </div>
+</header>
+
+<!-- ======================= 免责声明（显著位置） ======================= -->
+<div class="disclaimer-banner" role="note">
+  <span class="warn-icon">!</span>
+  <span>本系统输出的是风险提示，不构成医疗诊断，临床决策请遵医嘱。</span>
+</div>
+
+<main class="container">
+
+  <!-- ========================= 概览统计条 ========================= -->
+  <section class="stats" aria-label="概览统计">
+    <div class="stat-card">
+      <div class="stat-label">在监患者数</div>
+      <div class="stat-value"><span id="statPatients">—</span><span class="stat-unit">人</span></div>
+      <div class="stat-sub" id="statPatientsSub">重症监护单元实时在监</div>
+    </div>
+    <div class="stat-card is-high">
+      <div class="stat-label">高风险患者数</div>
+      <div class="stat-value"><span id="statHigh">—</span><span class="stat-unit">人</span></div>
+      <div class="stat-sub" id="statHighSub">风险分数 ≥ 0.65</div>
+    </div>
+    <div class="stat-card is-alert">
+      <div class="stat-label">当前告警数</div>
+      <div class="stat-value"><span id="statAlerts">—</span><span class="stat-unit">条</span></div>
+      <div class="stat-sub" id="statAlertsSub">含待处理与已处理</div>
+    </div>
+    <div class="stat-card is-time">
+      <div class="stat-label">平均提前预警时间</div>
+      <div class="stat-value"><span id="statLead">—</span><span class="stat-unit">小时</span></div>
+      <div class="stat-sub" id="statLeadSub">相对脓毒症发作时刻</div>
+    </div>
+  </section>
+
+  <!-- ========================== 工具栏 ========================== -->
+  <div class="section-title">患者风险列表 <span class="sub" id="listSummary">按风险降序</span></div>
+
+  <div class="toolbar">
+    <div class="tool-group">
+      <span class="tool-label">排序</span>
+      <select class="select" id="sortSelect">
+        <option value="risk">按风险降序</option>
+        <option value="bed">按床号</option>
+        <option value="los">按住院时长</option>
+      </select>
+    </div>
+
+    <div class="tool-group">
+      <span class="tool-label">风险等级</span>
+      <div class="chips" id="levelChips">
+        <span class="chip is-active" data-level="all">全部</span>
+        <span class="chip" data-level="high">高风险</span>
+        <span class="chip" data-level="medium">中风险</span>
+        <span class="chip" data-level="low">低风险</span>
+        <span class="chip" data-level="normal">正常</span>
+      </div>
+    </div>
+
+    <div class="tool-group search-box">
+      <input class="input" id="searchInput" type="search" placeholder="患者编号 / 床号" autocomplete="off">
+    </div>
+
+    <div class="toolbar-right">
+      <label class="switch" title="每 10 秒自动刷新">
+        <input type="checkbox" id="autoRefresh" checked>
+        <span class="slider"></span>
+        <span>自动刷新</span>
+      </label>
+      <button class="btn btn-ghost" id="refreshBtn">立即刷新</button>
+    </div>
+  </div>
+
+  <!-- ========================= 患者卡片列表 ========================= -->
+  <div class="grid" id="patientGrid"></div>
+
+</main>
+
+<!-- ============================ 页脚 ============================ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-disclaimer">
+      <span class="warn-icon">!</span>
+      <span>本系统输出的是风险提示，不构成医疗诊断，临床决策请遵医嘱。</span>
+    </div>
+    <div class="footer-source">数据来源：Reyna MA, Josef CS, Jeter R, et al. Early Prediction of Sepsis From Clinical Data: The PhysioNet/Computing in Cardiology Challenge 2019. Critical Care Medicine, 48(2):210-217, 2019. 许可 CC BY 4.0，DOI 10.13026/v64v-d857</div>
+    <div class="footer-meta">
+      <span>哨兵 SepsisGuard · 医生端</span>
+      <span id="footerModel">模型版本：—</span>
+      <span id="footerMode">数据模式：—</span>
+      <span>界面渲染：原生 Canvas 2D（无第三方图表库）</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ========================= 患者详情抽屉 ========================= -->
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="患者详情">
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-title" id="drawerTitle">—</div>
+      <div class="drawer-sub" id="drawerSub">—</div>
+    </div>
+    <button class="icon-btn" id="drawerClose" title="关闭（Esc）">✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<!-- ====================== 忽略原因选择弹窗 ====================== -->
+<div class="modal-backdrop" id="reasonModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reasonModalTitle">
+    <div class="modal-title" id="reasonModalTitle">忽略本条告警</div>
+    <div class="modal-sub" id="reasonModalSub">请选择忽略原因，记录将写入告警日志，用于模型假阳性复盘。</div>
+    <div class="radio-list" id="reasonOptions">
+      <label class="radio-item is-on" data-reason="已知病情"><input type="radio" name="ignoreReason" value="已知病情" checked><span>已知病情（如慢性低血压、术后反应）</span></label>
+      <label class="radio-item" data-reason="数据异常"><input type="radio" name="ignoreReason" value="数据异常"><span>数据异常（监护仪伪值、采血误差）</span></label>
+      <label class="radio-item" data-reason="已处理"><input type="radio" name="ignoreReason" value="已处理"><span>已处理（已完成临床干预）</span></label>
+      <label class="radio-item" data-reason="其他"><input type="radio" name="ignoreReason" value="其他"><span>其他（请在下方补充说明）</span></label>
+    </div>
+    <div style="margin-top:12px">
+      <input class="input" id="reasonNote" style="width:100%" type="text" placeholder="补充说明（可选）">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="reasonCancel">取消</button>
+      <button class="btn btn-danger" id="reasonConfirm">确认忽略</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-host" id="toastHost"></div>
+
+<script src="js/demo-data.js"></script>
+<script src="js/baked-data.js"></script>
+<script>window.SGBakedSnapshot = true;</script>
+<script src="js/charts.js"></script>
+<script src="js/api.js"></script>
+<script src="js/doctor.js"></script>
+</body>
+</html>

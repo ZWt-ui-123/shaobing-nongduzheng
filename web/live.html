@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>哨兵 SepsisGuard · 动态监护</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/console.css">
+<link rel="stylesheet" href="css/connect.css">
+</head>
+<body>
+<div class="app">
+
+  <nav class="nav" aria-label="主导航">
+    <div class="nav-brand">
+      <div class="nav-logo">哨</div>
+      <div class="nav-brand-text">
+        <div class="nav-title">哨兵 SepsisGuard</div>
+        <div class="nav-sub">脓毒症早期预警平台</div>
+      </div>
+    </div>
+
+    <div class="nav-items">
+      <a class="nav-item" href="console.html">
+        <span class="nav-icon">▤</span><span>临床控制台</span>
+      </a>
+      <a class="nav-item" href="connect.html">
+        <span class="nav-icon">⇄</span><span>数据接入</span>
+      </a>
+      <a class="nav-item is-active" href="live.html">
+        <span class="nav-icon">◉</span><span>动态监护</span>
+      </a>
+      <a class="nav-item" href="manual.html">
+        <span class="nav-icon">✎</span><span>手动录入</span>
+      </a>
+      <a class="nav-item" href="report.html">
+        <span class="nav-icon">▦</span><span>报告中心</span>
+      </a>
+      <a class="nav-item" href="timeline.html">
+        <span class="nav-icon">☰</span><span>观察日志</span>
+      </a>
+      <a class="nav-item" href="monitor.html">
+        <span class="nav-icon">◈</span><span>运维监控</span>
+      </a>
+    </div>
+
+    <div class="nav-items">
+      <div class="nav-item is-active" data-view="all">
+        <span class="nav-icon">▤</span><span>全部在监</span>
+        <span class="nav-count" id="navCountAll">—</span>
+      </div>
+      <div class="nav-item" data-view="high">
+        <span class="nav-icon">▲</span><span>高风险及以上</span>
+        <span class="nav-count" id="navCountHigh">—</span>
+      </div>
+      <div class="nav-item" data-view="rising">
+        <span class="nav-icon">↗</span><span>风险上升</span>
+        <span class="nav-count" id="navCountRising">—</span>
+      </div>
+      <div class="nav-item" data-view="deteriorating">
+        <span class="nav-icon">◆</span><span>恶化病程</span>
+        <span class="nav-count" id="navCountDeter">—</span>
+      </div>
+      <div class="nav-item" data-view="onset">
+        <span class="nav-icon">✚</span><span>已发作</span>
+        <span class="nav-count" id="navCountOnset">—</span>
+      </div>
+    </div>
+
+    <div class="nav-foot">
+      <div id="navModel">模型：—</div>
+      <div id="navSource">数据源：—</div>
+    </div>
+  </nav>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">动态监护</div>
+      <div class="topbar-desc">连续数据流下的风险演化</div>
+    </div>
+    <div class="topbar-ticker">
+      <div class="ticker-item">
+        <span>虚拟时间</span><b id="tkClock">—</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>在监</span><b id="tkPatients">—</b>
+      </div>
+      <div class="ticker-item is-critical">
+        <span>极高</span><b id="tkCritical">—</b>
+      </div>
+      <div class="ticker-item is-high">
+        <span>高</span><b id="tkHigh">—</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>告警</span><b id="tkAlerts">—</b>
+      </div>
+      <div class="ticker-item is-optional">
+        <span>吞吐</span><b id="tkThroughput">—</b><span>h/s</span>
+      </div>
+      <div class="conn" id="connBox" title="后端连接状态">
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connText">连接中…</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- 引擎控制条 -->
+    <section class="panel" style="margin-bottom:0;">
+      <div class="live-controls">
+        <div class="live-clock" id="clockBig">第 0 小时</div>
+        <button class="btn is-primary" id="playBtn">▶ 开始推流</button>
+        <button class="btn" id="step1">+1 小时</button>
+        <button class="btn" id="step6">+6 小时</button>
+        <button class="btn" id="step24">+24 小时</button>
+        <span class="faint" style="font-size:11px;border-left:1px solid var(--border);
+              padding-left:var(--sp-3);">回放</span>
+        <button class="btn is-ghost" id="rew1" title="回退 1 小时">⏪ 1h</button>
+        <button class="btn is-ghost" id="rew6" title="回退 6 小时">⏪ 6h</button>
+        <button class="btn is-ghost" id="rew24" title="回退 24 小时">⏪ 24h</button>
+        <button class="btn is-ghost" id="rewindAll" title="回到起点，从头回放">⏮ 回到起点</button>
+        <button class="btn is-ghost" id="toLatest" title="跳到已生成的最新时刻">⏭ 最新时刻</button>
+        <button class="btn is-ghost" id="resetBtn">重新启动</button>
+
+        <label class="field" style="flex-direction:row;align-items:center;gap:6px;margin:0;">
+          <span class="faint" style="font-size:11px;">每次推进</span>
+          <select class="select" id="speedSelect" style="width:118px;">
+            <option value="1">+1 小时</option>
+            <option value="2" selected>+2 小时</option>
+            <option value="6">+6 小时</option>
+            <option value="12">+12 小时</option>
+          </select>
+        </label>
+
+        <label class="field" style="flex-direction:row;align-items:center;gap:6px;margin:0;">
+          <span class="faint" style="font-size:11px;">监护场景</span>
+          <select class="select" id="scenarioSelect" style="width:132px;"></select>
+        </label>
+
+        <label class="field" style="flex-direction:row;align-items:center;gap:6px;margin:0;">
+          <span class="faint" style="font-size:11px;">患者数</span>
+          <input class="input" id="nPatients" type="number" min="10" max="1000" step="10"
+                 value="100" style="width:74px;">
+        </label>
+
+        <label class="switch" title="混合多种监护场景，演示同一平台服务不同场所">
+          <input type="checkbox" id="mixScenarios" checked>
+          <span class="track"></span>
+          <span>混合场景</span>
+        </label>
+
+        <span class="live-flag" id="flagSource">数据来源：检测中…</span>
+        <span class="live-flag" id="flagModel">模型：—</span>
+        <span class="live-flag" id="flagPerf">推进耗时：—</span>
+        <span class="live-flag" id="flagReplay">实时</span>
+        <span class="live-flag" id="flagActive">当前数据源：—</span>
+        <button class="btn is-ghost" id="setActiveBtn" title="把动态仿真后端设为平台当前数据源">
+          设为当前数据源
+        </button>
+      </div>
+      <div class="panel-foot" style="padding:0 var(--sp-4);">
+        <span class="faint" id="engineFoot">推进按「上一次完成后才发下一次」自定步；回放只移动时间游标，不重新生成数据。</span>
+      </div>
+    </section>
+
+    <section class="hero" id="hero" style="margin-top:var(--sp-4);">
+      <div class="hero-main">
+        <div class="hero-eyebrow">连续监护态势</div>
+        <div class="hero-sentence" id="heroSentence">正在启动动态监护引擎…</div>
+        <div class="hero-note" id="heroNote">—</div>
+      </div>
+      <div class="hero-facts">
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactHigh">—</div>
+          <div class="hero-fact-label">高风险及以上</div>
+        </div>
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactAlerts">—</div>
+          <div class="hero-fact-label">累计告警</div>
+        </div>
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactHours">—</div>
+          <div class="hero-fact-label">累计患者小时</div>
+        </div>
+        <div class="hero-fact">
+          <div class="hero-fact-value" id="heroFactCoverage">—</div>
+          <div class="hero-fact-label">平均完整度</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 场景与病程分布 -->
+    <section class="vitals-strip" id="mixStrip" aria-label="场景与病程分布"></section>
+
+    <!-- 监护场景分区：每个场景一个区块，只列该场景的在监患者 -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span>监护场景分区</span>
+          <span class="sub" id="scenarioSub">按监护场景列示在监患者</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="scen-grid" id="scenarioGrid"></div>
+      </div>
+    </section>
+
+    <!-- 患者列表 -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span id="panelTitle">动态患者清单</span>
+          <span class="sub" id="panelSub">按当前风险降序 · 每推进一小时自动刷新</span>
+        </div>
+        <div class="panel-tools">
+          <input class="input" id="searchInput" type="search"
+                 placeholder="搜索 患者编号 / 床号" autocomplete="off" style="width:170px;">
+          <select class="select" id="sortSelect">
+            <option value="risk">按当前风险</option>
+            <option value="peak">按峰值风险</option>
+            <option value="trend">按风险增速</option>
+            <option value="completeness">按信息完整度</option>
+            <option value="id">按患者编号</option>
+          </select>
+          <label class="switch" title="跟随推流自动刷新">
+            <input type="checkbox" id="autoRefresh" checked>
+            <span class="track"></span>
+            <span>跟随</span>
+          </label>
+          <button class="btn is-ghost" id="refreshBtn">刷新</button>
+        </div>
+      </div>
+
+      <div class="panel-body is-flush">
+        <div class="table-wrap" id="tableWrap">
+          <table class="grid" id="patientTable">
+            <thead>
+              <tr>
+                <th>患者 / 床号</th>
+                <th>监护场景</th>
+                <th>病程</th>
+                <th class="num">当前风险</th>
+                <th class="num">峰值</th>
+                <th class="num">近 6h 变化</th>
+                <th>风险轨迹</th>
+                <th class="num">完整度</th>
+                <th>发作时点</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="tableEmpty" style="display:none;">
+          <div class="empty-icon">◌</div>
+          <div class="empty-title">当前筛选条件下没有患者</div>
+          <div class="empty-desc">放宽筛选条件，或点击「开始推流」让时间继续前进</div>
+        </div>
+      </div>
+
+      <div class="panel-foot">
+        <span id="footRange">—</span>
+        <span class="faint" id="footPerf">—</span>
+        <span class="faint" style="margin-left:0;">
+          点击任一行查看该患者的完整病程时间线与风险轨迹
+        </span>
+      </div>
+    </section>
+
+    <p class="disclaimer-inline">
+      <b>本系统输出的是风险提示，不构成医疗诊断，临床决策请遵医嘱。</b>
+      本页数据由内置连续仿真引擎生成，用于验证系统在连续数据流下的完整行为，
+      不代表任何真实患者。接入真实监护后端后走的是同一套评分、分级与抑制逻辑。
+    </p>
+    <p class="disclaimer-inline">
+      数据来源（模型训练与验证）：Reyna MA, Josef CS, Jeter R, et al.
+      Early Prediction of Sepsis From Clinical Data: The PhysioNet/Computing in
+      Cardiology Challenge 2019. Critical Care Medicine, 48(2):210-217, 2019.
+      许可 CC BY 4.0，DOI 10.13026/v64v-d857
+    </p>
+
+  </main>
+</div>
+
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="患者详情">
+  <div class="drawer-head">
+    <div class="drawer-head-main">
+      <div class="drawer-title" id="drawerTitle">—</div>
+      <div class="drawer-sub" id="drawerSub">—</div>
+    </div>
+    <button class="icon-btn" id="drawerClose" title="关闭（Esc）">✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<script src="js/charts.js"></script>
+<script src="js/varspec.js"></script>
+<script>window.SGBakedSnapshot = true;</script>
+<script src="js/sim-core.js"></script>
+<script src="js/live.js"></script>
+</body>
+</html>
